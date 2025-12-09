@@ -1,5 +1,13 @@
-SET key1 11887a93-a2e2-4091-b03f-0984b395f625
-SET key1 d417e38d-2103-4798-a99e-d291bbd12a63
-SET key1 b8d1d8bc-9707-43d3-bc3a-81dc7263dbc2
-SET key1 8451aaae-7436-44c7-bf38-3082334ad253
-SET key1 e6abc778-e3c5-4332-b5f7-1e3101a0e198
+{"op":"SET","key":"7b6ca374-e64b-47c7-b8a6-32fad2775166","value":"3eb45643-cd23-47c4-83e8-f1881f4a41c0"}
+{"op":"DEL","key":"7b6ca374-e64b-47c7-b8a6-32fad2775166"}
+{"op":"SET","key":"9575966d-0ce3-4074-a581-dc72c58b30c0","value":"c74be27e-a6ee-4524-91a2-287182cdc14b"}
+{"op":"SET","key":"16e7b63d-ee2f-4226-af4f-dd63ee4940c6","value":"448efe86-825a-4256-ae61-cd22f869d75a"}
+{"op":"SET","key":"88757382-a970-4a68-b125-708af86fd34f","value":"1299c6e6-4150-418f-bd5e-140bd6c27c13"}
+{"op":"SET","key":"8a5daeba-cd49-402c-86f3-5e4d43d5e27e","value":"bfc37407-af22-4eb9-a56e-fdea71005141"}
+{"op":"EXPIRE","key":"8a5daeba-cd49-402c-86f3-5e4d43d5e27e","expire_at_ms":1765319179685}
+{"op":"SET","key":"a","value":"1541bb69-b1ed-4f7e-ac8f-39b3c222429f"}
+{"op":"SET","key":"b","value":"4f201c4f-ca8b-44fe-8db0-4b5c81e436f6"}
+{"op":"SET","key":"c","value":"3f82e3a0-d38b-4990-9840-35851b638e32"}
+{"op":"SET","key":"d","value":"130b8ff2-d3c9-41c4-bfd7-45e110ba4c25"}
+{"op":"SET","key":"e","value":"b0b56a85-751c-4f74-a1cd-e7f724e88e24"}
+{"op":"SET","key":"a710c109-7ad0-4cd2-80e6-cda85135a4b3","value":"e69bbbfb-dfa5-4001-8058-0d0e65a4aeaa"}

@@ -1,41 +1,49 @@
+# kv_storage.py
+"""
+Simple append-only log storage for the key-value database.
 
+Each record is written as a single JSON line.  On startup, the log
+is replayed to rebuild the in-memory index.
+"""
 
 from __future__ import annotations
 
+import json
 import os
-from typing import TextIO
-
-from kv_index import KVList
-
-DATA_FILE: str = "data.db"
+from typing import Dict, Iterator, Any
 
 
-def fsync_file(fh: TextIO) -> None:
-    
-    try:
-        fh.flush()
-        os.fsync(fh.fileno())
-    except (OSError, AttributeError):
-        return
+class LogStorage:
+    """Append-only JSON-lines log for persistence."""
 
+    def __init__(self, path: str = "data.db") -> None:
+        self.path = path
+        # Ensure the file exists
+        if not os.path.exists(self.path):
+            with open(self.path, "w", encoding="utf-8"):
+                pass
 
-def replay_log(kv: KVList, path: str = DATA_FILE) -> None:
-    
-    if not os.path.exists(path):
-        return
+    def append(self, record: Dict[str, Any]) -> None:
+        """Append a single record to the log."""
+        # Open in text append mode; newline-delimited JSON
+        with open(self.path, "a", encoding="utf-8") as f:
+            json.dump(record, f, separators=(",", ":"))
+            f.write("\n")
+            f.flush()
 
-    try:
-        with open(path, "r", encoding="utf-8", errors="replace") as fh:
-            for raw in fh:
-                line: str = raw.rstrip("\n")
+    def records(self) -> Iterator[Dict[str, Any]]:
+        """Iterate over all records in the log."""
+        if not os.path.exists(self.path):
+            return
+        with open(self.path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
                 if not line:
                     continue
-                parts = line.split(" ", 2)
-                if len(parts) == 3 and parts[0] == "SET":
-                    _, key, value = parts
-                    # Defensive: ensure no-space key as required by CLI
-                    if key and (" " not in key):
-                        kv.set(key, value)
-    except (OSError, UnicodeError):
-        # Corrupt/unreadable log: skip replay silently.
-        return
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    # Skip corrupted lines (should not happen in this project)
+                    continue
+                if isinstance(rec, dict):
+                    yield rec
