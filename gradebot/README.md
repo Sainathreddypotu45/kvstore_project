@@ -1,124 +1,183 @@
-# CSCE 5350 Gradebot
+KV Store Project — Persistent Key-Value Database (Project-2)
+Overview
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/jh125486/CSCE5350_gradebot)](https://golang.org/)
-[![Build Status](https://github.com/jh125486/CSCE5350_gradebot/workflows/test/badge.svg)](https://github.com/jh125486/CSCE5350_gradebot/actions)
-[![Coverage Status](https://codecov.io/gh/jh125486/CSCE5350_gradebot/branch/main/graph/badge.svg)](https://codecov.io/gh/jh125486/CSCE5350_gradebot)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jh125486_CSCE5350_gradebot&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jh125486_CSCE5350_gradebot)
-[![Go Report Card](https://goreportcard.com/badge/github.com/jh125486/CSCE5350_gradebot)](https://goreportcard.com/report/github.com/jh125486/CSCE5350_gradebot)
-[![Release](https://img.shields.io/github/release/jh125486/CSCE5350_gradebot.svg)](https://github.com/jh125486/CSCE5350_gradebot/releases)
+This project is the second phase of CSCE 5350 — Build Your Own Database at the University of North Texas. It extends the basic append-only key-value store from Project-1 and introduces advanced database features including range queries, multi-key operations, TTL-based expiration, and transactional writes. The database persists all changes using an append-only log file (data.db), and state is reconstructed on restart by replaying the log.
 
-Automated code grading system for CSCE 5350 assignments.
+Features Implemented
 
-## Features
+Basic commands: SET, GET, DEL, EXISTS
+Multi-key commands: MSET, MGET
+Lexicographic range scan: RANGE
+Expiration and TTL semantics: EXPIRE, TTL, PERSIST
+Transactions with atomic commit and abort: BEGIN, COMMIT, ABORT
+Durable log-based storage model
+Crash-safe replay on restart
+Lazy expiration for TTL keys
+All functionality is implemented in Python using a custom log index and in-memory data structures.
 
-- **Server Mode**: HTTP server for receiving and grading code submissions
-- **Client Mode**: CLI tool for submitting assignments for grading
-- **OpenAI Integration**: Uses GPT-4o Mini for code analysis and feedback
-- **Web Interface**: HTML dashboard for viewing submissions and grades
-- **Cross-Platform**: Native binaries for Linux, macOS, and Windows
-- **Koyeb Deployment**: Optimized for cloud deployment
+Supported Commands
+Basic Operations
 
-## Architecture
+SET <key> <value>
+GET <key>
+DEL <key>
+EXISTS <key>
+EXIT
 
-### Overview
+Example:
 
-The gradebot consists of:
-- **Server**: HTTP API server handling grading requests
-- **Client**: CLI tool for submitting assignments
-- **Rubrics**: Evaluation logic and test runners
+SET name Sainath
+OK
+GET name
+Sainath
+EXISTS name
+1
+DEL name
+1
+EXISTS name
+0
+EXIT
 
-## Local Development
+Multi-Key Operations
 
-### Setup
+MSET k1 v1 k2 v2
+MGET k1 k2 k3
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/jh125486/CSCE5350_gradebot.git
-   cd CSCE5350_gradebot
-   ```
+Example:
 
-2. **Set up environment variables**:
-   ```bash
-   # Copy the example environment file
-   cp .env.example .env
-   
-   # Edit .env with your actual secrets
-   nano .env  # or your preferred editor
-   ```
+MSET a 10 b 20
+OK
+MGET a b c
+10
+20
+nil
 
-3. **Initialize development environment**:
-   ```bash
-   go mod tidy
-   make init    # Installs git hooks
-   make build
-   ```
-   The `make init` command installs a pre-push hook that runs tests and linting before allowing a push.
+Range Scan (Lexicographic)
 
-### Testing Locally
+Returns keys from start to end (inclusive), in sorted order.
 
-The application automatically loads environment variables from a `.env` file when running locally.
+Example:
 
-**Start the server**:
-```bash
-# Using Makefile
-make local-test
+SET a 1
+OK
+SET b 2
+OK
+SET c 3
+OK
+RANGE a c
+a
+b
+c
+END
 
-# Or manually
-./bin/gradebot server --port 8080
-```
+Expiration and TTL
 
-**Test the client**:
-```bash
-# Submit a project for grading
-./bin/gradebot project1 --dir /path/to/your/project --run "python main.py"
-```
+EXPIRE <key> <seconds>
+TTL <key>
+PERSIST <key>
 
-### Environment Variables
+TTL return values:
+positive number = seconds remaining
+-1 = key exists with no TTL
+-2 = key missing or expired
 
-The following environment variables are required for full functionality:
+Example:
 
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `BUILD_ID`: Unique build identifier for authentication
-- `R2_ENDPOINT`: Cloudflare R2 endpoint URL
-- `AWS_ACCESS_KEY_ID`: R2 access key
-- `AWS_SECRET_ACCESS_KEY`: R2 secret key
+SET temp 99
+OK
+EXPIRE temp 100
+1
+TTL temp
+98
+PERSIST temp
+1
+TTL temp
+-1
 
-Optional variables:
-- `R2_BUCKET`: Custom bucket name (defaults to "gradebot-storage")
-- `AWS_REGION`: AWS region (defaults to "auto")
-- `USE_PATH_STYLE`: Use path-style S3 URLs (for LocalStack testing)
+TTL cleanup uses lazy expiration: expired keys are removed only when accessed.
 
-### Development Workflow
+Transactions
 
-**Run tests**:
-```bash
-make test          # Run all tests with race detection
-make test-verbose  # Run tests with verbose output
-```
+Transactions support atomic writes with commit/abort.
 
-**Run linting**:
-```bash
-make lint          # Run golangci-lint and security checks
-```
+BEGIN
+COMMIT
+ABORT
 
-**Git Hooks**:
-The pre-push hook automatically runs before each `git push` to ensure:
-- All tests pass (including race detection)
-- Code passes all linting checks
+BEGIN starts transactional staging.
+READ returns staged values first (read-your-writes).
+ABORT discards staged writes.
+COMMIT writes changes to data.db.
 
-To bypass the hook (not recommended):
-```bash
-git push --no-verify
-```
+Example:
 
-## Usage
+BEGIN
+SET x 10
+OK
+GET x
+10
+ABORT
+OK
+GET x
+nil
 
-Submit assignments for grading:
+Persistence and Storage Architecture
 
-```bash
-# Project 1
-./gradebot project1 --dir /path/to/project --run "python main.py"
+The database uses a single append-only log file.
+Every write, delete, expiration update, and commit event is appended.
+On restart, the log file is replayed in order to rebuild in-memory state.
+This ensures crash consistency, atomic committed transactions, and simplicity without complex checkpointing.
 
-# Project 2
-./gradebot project2 --dir /path/to/project --run "go run main.go"
-```
+Project Structure
+
+kvstore_project/
+│
+├─ kvstore.py (CLI and command dispatcher)
+├─ kv_index.py (in-memory index, TTL, range scan)
+├─ kv_storage.py (append-only log implementation)
+├─ data.db (persistent log file)
+└─ gradebot/ (local gradebot binary)
+
+Running the Program
+
+python kvstore.py
+
+Example session:
+
+SET name Sainath
+OK
+GET name
+Sainath
+EXIT
+
+Testing with Gradebot
+
+gradebot project-2 --dir="." --run="python -u kvstore.py"
+
+Project-2 tests include:
+DeleteExists
+MSET/MGET
+TTL expiration
+RANGE lexicographic ordering
+Transaction commit/abort
+Code quality
+
+To tag and push the final submission:
+git tag project-2
+git push origin project-2
+git push origin main
+
+Author
+
+Sainath Reddy Potu
+CSCE 5350 — University of North Texas
+EUID: 11768010
+
+Notes
+
+Tested on Windows 11 using Python 3.14.
+Passed Project-2 Gradebot with >90%.
+Implements lazy expiration for simplicity and performance.
+Inspired by log-structured storage systems.
+
+This README documents the complete Project-2 implementation, covering features, usage, storage architecture, and testing. It replaces the Project-1 overview with the advanced feature set implemented in this phase.
