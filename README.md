@@ -1,18 +1,26 @@
-# KV Store Project 1 — Persistent Key-Value Database
+KV Store Project — Persistent Key-Value Database (Project-2)
+Overview
 
-## Overview
-This project implements a simple append-only key–value store that supports:
-- `SET <key> <value>`
-- `GET <key>`
-- `EXIT`
+This project is the second phase of CSCE 5350 — Build Your Own Database at the University of North Texas. It extends the basic append-only key-value store from Project-1 and introduces advanced database features including range queries, multi-key operations, TTL-based expiration, and transactional writes.
 
-All data is persisted in an append-only file (`data.db`) and restored upon restart by replaying the log.
+The database persists all changes using an append-only log file (data.db), and state is reconstructed on restart by replaying the log.
 
-## Example Usage
-```bash
-$ python kvstore.py
-SET name Sainath
-OK
-GET name
-Sainath
-EXIT
+Features Implemented
+
+Basic commands: SET, GET, DEL, EXISTS
+
+Multi-key commands: MSET, MGET
+
+Lexicographic range scan: RANGE
+
+Expiration and TTL semantics: EXPIRE, TTL, PERSIST
+
+Transactions with atomic commit and abort: BEGIN, COMMIT, ABORT
+
+Durable log-based storage model
+
+Crash-safe replay on restart
+
+Lazy expiration for TTL keys
+
+All functionality is implemented in Python using a custom log index and in-memory data structures
